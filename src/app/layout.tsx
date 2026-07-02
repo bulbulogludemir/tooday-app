@@ -8,6 +8,7 @@ import NotificationsWatcher from "@/components/NotificationsWatcher";
 import PwaRegister from "@/components/PwaRegister";
 import MotionProvider from "@/components/MotionProvider";
 import CommandPalette from "@/components/CommandPalette";
+import ChatPanel from "@/components/ai/ChatPanel";
 import ThemeApplier from "@/components/ThemeApplier";
 
 const inter = Inter({
@@ -45,6 +46,7 @@ export default function RootLayout({
           <Sidebar />
           <Toaster />
           <CommandPalette />
+          <ChatPanel />
         </MotionProvider>
         <NotificationsWatcher />
         <PwaRegister />

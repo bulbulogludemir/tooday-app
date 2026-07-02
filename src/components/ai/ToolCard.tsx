@@ -1,5 +1,3 @@
-"use client";
-
 import { Check, Eye, Loader2, TriangleAlert, Wrench, X } from "lucide-react";
 import { describeToolCall } from "@/lib/ai/executeTool";
 import { isWriteTool } from "@/lib/ai/tools";
