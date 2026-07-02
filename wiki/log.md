@@ -16,3 +16,11 @@ Direction change: SaaS launch planned, AI uses a server-side OpenRouter key.
 Approved design for an agentic chat panel (3 models, client-executed tools,
 confirmation before writes) in
 `docs/superpowers/specs/2026-07-02-ai-chat-panel-design.md`.
+
+## [2026-07-02] feature | AI chat panel shipped
+
+Agentic chat drawer on all pages: OpenRouter server key, 3-model picker
+(Gemini 3.5 Flash default, GPT-5.5, Opus 4.8), schema-only tools executed
+client-side against zustand stores, approval cards before every write.
+Verified end-to-end with Playwright against live models: read tools,
+apply/reject flow, no-write-before-approval, model switching.
