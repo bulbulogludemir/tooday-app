@@ -16,10 +16,6 @@ Start here when you need project memory beyond the code.
 
 - [Product direction](syntheses/product-direction.md)
 
-## Outputs
-
-- [Repo publish summary - 2026-07-02](../outputs/repo-publish-summary-2026-07-02.md)
-
 ## Open Questions
 
 - [Open questions](open-questions.md)

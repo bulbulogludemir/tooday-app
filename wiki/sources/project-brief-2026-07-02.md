@@ -1,6 +1,6 @@
 # Source Summary: Project Brief - 2026-07-02
 
-Raw source: [raw/project-brief-2026-07-02.md](../../raw/project-brief-2026-07-02.md)
+Source: user direction captured during local Codex work, 2026-07-02.
 
 ## Claims From Source
 

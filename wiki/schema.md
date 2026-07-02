@@ -4,14 +4,10 @@ This wiki records durable knowledge for tooday.
 
 ## Layout
 
-- `raw/`: immutable project sources and captured briefs.
-- `wiki/sources/`: summaries of raw or code sources.
+- `wiki/sources/`: summaries of project or code sources.
 - `wiki/concepts/`: reusable product and technical concepts.
 - `wiki/syntheses/`: higher-level product and architecture conclusions.
-- `outputs/`: durable reports and handoff summaries.
-- `visuals/`: notes or figures for generated/local visuals. Public README
-  screenshots currently live in `docs/assets/`.
-- `tools/`: optional local wiki/search helpers.
+- Public README screenshots live in `docs/assets/`.
 
 ## Naming
 
