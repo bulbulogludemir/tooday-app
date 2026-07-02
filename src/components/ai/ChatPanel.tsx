@@ -1,12 +1,20 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   DefaultChatTransport,
   lastAssistantMessageIsCompleteWithToolCalls,
 } from "ai";
 import { AnimatePresence, motion } from "framer-motion";
-import { Loader2, SendHorizontal, Sparkles, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  Loader2,
+  SendHorizontal,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { executeTool, serializeResult } from "@/lib/ai/executeTool";
 import {
@@ -15,16 +23,41 @@ import {
   isWriteTool,
   type AiModelId,
 } from "@/lib/ai/tools";
-import { dayKey } from "@/lib/time";
+import { dayKey, minutesToHHmm, nowMinutes } from "@/lib/time";
+import { usePlanStore } from "@/stores/usePlanStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
 import { useToastStore } from "@/stores/useToastStore";
 import ToolCard, { type ToolPartLike } from "./ToolCard";
 
-const SUGGESTIONS = [
-  "What's on my plan today?",
-  "Add a 1 hour workout tomorrow morning",
-  "Start a focus session",
-];
+const MODEL_HINTS: Record<AiModelId, string> = {
+  "google/gemini-3.5-flash": "fastest",
+  "openai/gpt-5.5": "balanced",
+  "anthropic/claude-opus-4.8": "deepest",
+};
+
+/** Suggestions follow the actual state of the day, not canned demos. */
+function buildSuggestions(): string[] {
+  const { plans, todos } = usePlanStore.getState();
+  const today = plans[dayKey()] ?? [];
+  const now = nowMinutes();
+  const current = today.find((a) => a.start <= now && now < a.start + a.duration);
+  const next = today.find((a) => a.start > now);
+  const undone = todos.filter((t) => !t.done).length;
+
+  const s: string[] = [];
+  if (today.length === 0) {
+    s.push(now < 12 * 60 ? "Plan my day" : "Plan the rest of my day");
+  } else if (next) {
+    s.push(`What's after ${minutesToHHmm(next.start)}?`);
+  } else {
+    s.push("How did my day go?");
+  }
+  if (undone > 0) s.push(`Which of my ${undone} todos should I do now?`);
+  if (now >= 18 * 60) s.push("Draft tomorrow from today's plan");
+  if (current) s.push(`Start a focus session for ${current.name}`);
+  s.push("Tidy up my categories");
+  return s.slice(0, 3);
+}
 
 /** Minimal inline markdown: only **bold**, since models emit it constantly. */
 function renderInline(text: string) {
@@ -61,7 +94,13 @@ export default function ChatPanel() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [modelId, setModelId] = useState<AiModelId>(DEFAULT_MODEL_ID);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const openPanel = () => {
+    setSuggestions(buildSuggestions());
+    setOpen(true);
+  };
 
   const { messages, sendMessage, status, error, clearError, addToolOutput } =
     useChat({
@@ -138,7 +177,7 @@ export default function ChatPanel() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            onClick={() => setOpen(true)}
+            onClick={openPanel}
             aria-label="Open AI assistant"
             className="glass elev-2 fixed bottom-6 right-6 z-[45] flex h-11 w-11 items-center justify-center rounded-full text-accent hover:bg-white/10"
           >
@@ -151,39 +190,63 @@ export default function ChatPanel() {
         {open && (
           <motion.aside
             key="ai-panel"
-            initial={{ x: 48, opacity: 0 }}
+            initial={{ x: 32, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 48, opacity: 0 }}
+            exit={{ x: 32, opacity: 0 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="elev-3 fixed inset-y-0 right-0 z-[60] flex w-full flex-col border-l border-white/[0.07] bg-surface/90 backdrop-blur-2xl sm:w-[400px]"
+            className="elev-3 fixed bottom-3 right-3 top-3 z-[60] flex w-[min(400px,calc(100vw-24px))] flex-col overflow-hidden rounded-2xl border-t border-white/[0.07] bg-surface/85 backdrop-blur-2xl"
           >
             <header className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
-              <Sparkles size={16} className="text-accent" />
+              <Sparkles size={15} className="text-accent" />
               <span className="font-display text-sm font-semibold">
                 Assistant
               </span>
-              <select
-                value={modelId}
-                onChange={(e) => {
-                  const next = e.target.value as AiModelId;
-                  currentModelId = next;
-                  setModelId(next);
-                }}
-                className="ml-auto rounded-lg bg-surface-2 px-2 py-1.5 text-xs text-neutral-300 outline-none focus:border-accent/60"
-                aria-label="Model"
-              >
-                {AI_MODELS.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <button
+                    aria-label="Model"
+                    className="ml-auto flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1.5 text-xs text-neutral-300 transition-colors hover:bg-white/10"
+                  >
+                    {AI_MODELS.find((m) => m.id === modelId)?.label}
+                    <ChevronDown size={12} className="text-muted" />
+                  </button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    align="end"
+                    sideOffset={8}
+                    className="elev-2 z-[70] w-52 rounded-lg border-t border-white/[0.07] bg-surface-2/90 p-1 backdrop-blur-md"
+                  >
+                    <DropdownMenu.Label className="px-2.5 py-1 text-[10px] uppercase tracking-wide text-muted/60">
+                      Model
+                    </DropdownMenu.Label>
+                    {AI_MODELS.map((m) => (
+                      <DropdownMenu.Item
+                        key={m.id}
+                        onSelect={() => {
+                          currentModelId = m.id;
+                          setModelId(m.id);
+                        }}
+                        className="flex cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-xs outline-none data-[highlighted]:bg-white/5"
+                      >
+                        <span className="w-3">
+                          {modelId === m.id && <Check size={12} />}
+                        </span>
+                        {m.label}
+                        <span className="ml-auto text-[10px] text-muted/70">
+                          {MODEL_HINTS[m.id]}
+                        </span>
+                      </DropdownMenu.Item>
+                    ))}
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Close"
-                className="rounded-full p-1.5 text-muted hover:bg-white/5 hover:text-foreground"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors hover:bg-white/5 hover:text-foreground"
               >
-                <X size={16} />
+                <X size={15} />
               </button>
             </header>
 
@@ -192,21 +255,28 @@ export default function ChatPanel() {
               className="flex-1 space-y-4 overflow-y-auto px-4 py-4"
             >
               {messages.length === 0 && (
-                <div className="mt-8 flex flex-col items-center gap-4 text-center">
-                  <p className="text-sm text-muted">
-                    Ask about your day, or tell me what to plan.
+                <div className="flex h-full flex-col items-center justify-center gap-5 pb-10 text-center">
+                  <div className="glass flex h-12 w-12 items-center justify-center rounded-full">
+                    <Sparkles size={18} className="text-accent" />
+                  </div>
+                  <p className="max-w-[240px] text-sm leading-relaxed text-muted">
+                    Your plan, todos and pomodoro — ask anything, or hand the
+                    day over.
                   </p>
-                  <div className="flex flex-col gap-2">
-                    {SUGGESTIONS.map((s) => (
+                  <div className="flex flex-col items-center gap-2">
+                    {suggestions.map((s) => (
                       <button
                         key={s}
                         onClick={() => submit(s)}
-                        className="rounded-full bg-surface-2 px-3 py-1.5 text-xs text-neutral-300 hover:bg-white/10"
+                        className="rounded-full bg-surface-2 px-3.5 py-1.5 text-xs text-neutral-300 transition-colors hover:bg-white/10 hover:text-foreground"
                       >
                         {s}
                       </button>
                     ))}
                   </div>
+                  <p className="text-[11px] text-muted/60">
+                    Changes apply only after you approve them.
+                  </p>
                 </div>
               )}
 
@@ -271,15 +341,15 @@ export default function ChatPanel() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Message…"
-                className="h-10 w-full rounded-lg border border-transparent bg-surface-2 px-3 text-sm outline-none transition-colors placeholder:text-muted/60 focus:border-accent/60"
+                className="h-11 w-full rounded-lg border border-transparent bg-surface-2 px-3.5 text-sm outline-none transition-colors placeholder:text-muted/60 focus:border-accent/60"
               />
               <button
                 type="submit"
                 disabled={busy || !input.trim()}
                 aria-label="Send"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-strong)] text-white hover:brightness-110 disabled:opacity-40"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-strong)] text-white transition-[filter] hover:brightness-110 disabled:opacity-40"
               >
-                <SendHorizontal size={16} />
+                <SendHorizontal size={15} />
               </button>
             </form>
           </motion.aside>
