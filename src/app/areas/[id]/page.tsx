@@ -8,15 +8,17 @@ import { AREA_ICONS } from "@/components/areas/areaIcons";
 import BlockCard from "@/components/areas/BlockCard";
 import { dotGradient } from "@/lib/colors";
 import { useNow } from "@/lib/useNow";
-import { useAreasStore } from "@/stores/useAreasStore";
+import { useAreasStore, type AreaBlock } from "@/stores/useAreasStore";
 import { useToastStore } from "@/stores/useToastStore";
+
+const NO_BLOCKS: AreaBlock[] = [];
 
 export default function AreaPage() {
   const now = useNow(60_000);
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const area = useAreasStore((s) => s.areas.find((a) => a.id === id));
-  const blocks = useAreasStore((s) => s.blocks[id] ?? []);
+  const blocks = useAreasStore((s) => s.blocks[id] ?? NO_BLOCKS);
   const [tab, setTab] = useState<"content" | "coach">("coach");
 
   if (!now) return <main className="min-h-screen" />;

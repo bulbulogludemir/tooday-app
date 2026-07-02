@@ -57,6 +57,22 @@ describe("block upsert semantics", () => {
     expect(blocks[0]).toMatchObject({ id, markdown: "v2" });
   });
 
+  it('treats blockId: "" as "create new" (no collision)', () => {
+    executeAreaTool(AREA, "area_set_note", {
+      blockId: "",
+      title: "A",
+      markdown: "1",
+    });
+    executeAreaTool(AREA, "area_set_checklist", {
+      blockId: "",
+      title: "B",
+      items: [{ text: "x", done: false }],
+    });
+    const blocks = useAreasStore.getState().blocks[AREA];
+    expect(blocks).toHaveLength(2);
+    expect(blocks.every((b) => b.id.length > 0)).toBe(true);
+  });
+
   it("errors on unknown blockId", () => {
     const res = executeAreaTool(AREA, "area_set_note", {
       blockId: "nope",

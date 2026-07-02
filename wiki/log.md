@@ -24,3 +24,11 @@ Agentic chat drawer on all pages: OpenRouter server key, 3-model picker
 client-side against zustand stores, approval cards before every write.
 Verified end-to-end with Playwright against live models: read tools,
 apply/reject flow, no-write-before-approval, model switching.
+
+## [2026-07-02] feature | Life areas with AI coaches shipped
+
+/areas: user-created life areas (health, finance, …), each curated by a
+persistent AI coach. Six typed blocks (note, table, metric+sparkline, routine,
+checklist, links) written live without approval; planner writes keep approval
+cards. Memory note + last-20-messages context model. Fixed a blockId:"" upsert
+collision found in live E2E.

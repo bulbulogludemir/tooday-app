@@ -19,10 +19,13 @@ function requireArea(areaId: string): string | null {
  */
 function upsert(
   areaId: string,
-  blockId: string | undefined,
+  rawBlockId: string | undefined,
   build: (id: string) => AreaBlock,
 ): ToolExecutionResult {
   const store = useAreasStore.getState();
+  // Models sometimes send blockId: "" meaning "new block" — treat any falsy
+  // value as absent, or every such block would collide on the "" id.
+  const blockId = rawBlockId || undefined;
   if (blockId) {
     const existing = (store.blocks[areaId] ?? []).find((b) => b.id === blockId);
     if (!existing) {
