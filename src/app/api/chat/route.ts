@@ -35,6 +35,31 @@ function systemPrompt(context: ChatContext | undefined): string {
     .join("\n");
 }
 
+/**
+ * Sanitize client-supplied prompt context: only known shapes reach the
+ * system prompt, so a tampered request can't inject prompt lines.
+ */
+function sanitizeContext(context: ChatContext | undefined): ChatContext {
+  if (!context || typeof context !== "object") return {};
+  const clean: ChatContext = {};
+  if (
+    typeof context.now === "string" &&
+    context.now.length <= 80 &&
+    !/[\r\n]/.test(context.now)
+  ) {
+    clean.now = context.now;
+  }
+  if (typeof context.today === "string" && /^\d{4}-\d{2}-\d{2}$/.test(context.today)) {
+    clean.today = context.today;
+  }
+  if (context.clockFormat === "24h" || context.clockFormat === "12h") {
+    clean.clockFormat = context.clockFormat;
+  }
+  return clean;
+}
+
+const MAX_MESSAGES = 100;
+
 export async function POST(req: Request) {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
@@ -44,6 +69,14 @@ export async function POST(req: Request) {
     );
   }
 
+  // Until real auth ships with the SaaS layer, a self-hosted deploy can set
+  // CHAT_ACCESS_TOKEN to keep this endpoint (and its OpenRouter spend) private.
+  // Unset = open, intended for localhost use only.
+  const accessToken = process.env.CHAT_ACCESS_TOKEN;
+  if (accessToken && req.headers.get("x-chat-token") !== accessToken) {
+    return Response.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
   let body: ChatRequestBody;
   try {
     body = (await req.json()) as ChatRequestBody;
@@ -51,16 +84,21 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const { messages, modelId, context } = body;
+  const { messages, modelId } = body;
+  const context = sanitizeContext(body.context);
   if (!AI_MODELS.some((m) => m.id === modelId)) {
     return Response.json(
       { error: `Unknown model "${modelId}".` },
       { status: 400 },
     );
   }
-  if (!Array.isArray(messages) || messages.length === 0) {
+  if (
+    !Array.isArray(messages) ||
+    messages.length === 0 ||
+    messages.length > MAX_MESSAGES
+  ) {
     return Response.json(
-      { error: "messages must be a non-empty array." },
+      { error: `messages must be a non-empty array of at most ${MAX_MESSAGES}.` },
       { status: 400 },
     );
   }
@@ -76,7 +114,11 @@ export async function POST(req: Request) {
   });
 
   return result.toUIMessageStreamResponse({
+    // Surface a single readable line (e.g. "insufficient credits") without
+    // leaking stacks or response internals.
     onError: (error) =>
-      error instanceof Error ? error.message : "The model request failed.",
+      error instanceof Error
+        ? error.message.split("\n")[0].slice(0, 200)
+        : "The model request failed.",
   });
 }
