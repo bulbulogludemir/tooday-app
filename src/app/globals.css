@@ -1,26 +1,211 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0e0e10;
+  --surface: #17171a;
+  --surface-2: #1f1f23;
+  --ring-track: #38383d;
+  --foreground: #f5f5f6;
+  --muted: #9b9ba3;
+  --accent: #818cf8;
+  --accent-strong: #4f46e5;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ring-track: var(--ring-track);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
+}
+
+/* reserve the scrollbar lane so navigation between scrolling and
+   non-scrolling views doesn't shift the layout horizontally */
+html {
+  scrollbar-gutter: stable;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* fine grain + corner vignette keep the dark canvas from looking flat */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 90% at 50% 20%,
+    transparent 55%,
+    rgba(0, 0, 0, 0.45) 100%
+  );
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0.022;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: rgba(129, 140, 248, 0.35);
+}
+
+/* slim, quiet scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #26262b;
+  border: 3px solid var(--background);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* accessible, on-brand focus rings */
+:focus-visible {
+  outline: 2px solid rgba(129, 140, 248, 0.55);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* tactile press on every button */
+button {
+  -webkit-tap-highlight-color: transparent;
+  transition-property: transform;
+  transition-duration: 0.1s;
+}
+button:active {
+  transform: scale(0.97);
+}
+
+/* --- material & elevation system ------------------------------------- */
+
+.glass {
+  background: rgba(255, 255, 255, 0.04);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.elev-1 {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+.elev-2 {
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.elev-3 {
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* --- motion ----------------------------------------------------------- */
+
+@keyframes rail-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* the running activity's segment slowly breathes its glow */
+@keyframes dial-glow-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 3px var(--seg-glow));
+  }
+  50% {
+    filter: drop-shadow(0 0 9px var(--seg-glow));
+  }
+}
+
+.dial-active-glow {
+  animation: dial-glow-pulse 3.2s ease-in-out infinite;
+}
+
+/* the dial settles in with a soft scale instead of drawing strokes */
+@keyframes dial-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.dial-in {
+  animation: dial-pop 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* gentle crossfade between views */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.page-in {
+  animation: page-in 0.22s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.toast-in {
+  animation: toast-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* respect users who prefer less motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

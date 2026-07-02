@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# tooday
 
-## Getting Started
+Local-first day planning wrapped around a clock.
 
-First, run the development server:
+tooday is a self-hostable personal planner for people who want a fast, private
+surface for planning the day, tracking focus, and reviewing time without a
+subscription. The current app stores data locally in the browser. The roadmap is
+to keep the default experience local, add optional self-host storage, and expose
+AI through BYOK provider keys instead of a hosted paid account.
+
+![tooday desktop clock view](docs/assets/tooday-desktop.png)
+
+## What Works Today
+
+- Clock-first day view with a 24-hour radial timeline.
+- Plan view with day/week switching, drag-style timeline affordances, templates,
+  categories, copy-day actions, and cut mode.
+- Todo list with optional activity tagging.
+- Report view for planned time summaries and Pomodoro rounds.
+- Command palette for navigation, quick actions, and natural-language quick add.
+- Pomodoro bar, browser notifications, PWA registration, and theme settings.
+- Local browser persistence through Zustand storage.
+
+<img src="docs/assets/tooday-mobile.png" alt="tooday mobile clock view" width="320" />
+
+## Local Setup
 
 ```bash
+git clone git@github.com:bulbulogludemir/tooday.git
+cd tooday
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Production-style local run:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm run start
+```
 
-## Learn More
+## Self-Host Shape
 
-To learn more about Next.js, take a look at the following resources:
+Today, the app can be built and run on any Node-capable machine:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+git pull
+npm ci
+npm run build
+npm run start -- --port 3210
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Put nginx, Caddy, or another reverse proxy in front of `next start` when running
+it on a server. See [docs/self-hosting.md](docs/self-hosting.md).
 
-## Deploy on Vercel
+Important current boundary: storage is browser-local right now. If you open the
+same server from another browser or device, it will not see the same plan until
+the planned local/self-host sync layer is added.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## BYOK AI Roadmap
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+AI is intentionally not required for the planner. The intended shape is:
+
+- No subscription gate.
+- User-owned provider keys stored locally or on the self-hosted instance.
+- Provider adapters for OpenAI-compatible APIs first.
+- Optional local Codex account integration later, with explicit account and
+  privacy boundaries.
+
+See [docs/local-ai-byok.md](docs/local-ai-byok.md).
+
+## Project Knowledge Base
+
+The repo includes an LLMiki wiki under [wiki/](wiki/). Start at
+[wiki/index.md](wiki/index.md) for product direction, architecture notes, open
+questions, and source summaries.
+
+## Scripts
+
+```bash
+npm run dev      # start local dev server
+npm run build    # production build
+npm run start    # serve the production build
+npm run lint     # ESLint
+npm run test     # Vitest unit tests
+```
+
+## License
+
+MIT. See [LICENSE](LICENSE).
