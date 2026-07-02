@@ -26,34 +26,29 @@ const SUGGESTIONS = [
   "Start a focus session",
 ];
 
+// Read at request time by the transport; written from the model picker.
+let currentModelId: AiModelId = DEFAULT_MODEL_ID;
+
+const transport = new DefaultChatTransport({
+  api: "/api/chat",
+  prepareSendMessagesRequest: ({ messages }) => ({
+    body: {
+      messages,
+      modelId: currentModelId,
+      context: {
+        now: new Date().toString(),
+        today: dayKey(),
+        clockFormat: useSettingsStore.getState().clockFormat,
+      },
+    },
+  }),
+});
+
 export default function ChatPanel() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [modelId, setModelId] = useState<AiModelId>(DEFAULT_MODEL_ID);
-  const modelIdRef = useRef<AiModelId>(modelId);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    modelIdRef.current = modelId;
-  }, [modelId]);
-
-  const [transport] = useState(
-    () =>
-      new DefaultChatTransport({
-        api: "/api/chat",
-        prepareSendMessagesRequest: ({ messages }) => ({
-          body: {
-            messages,
-            modelId: modelIdRef.current,
-            context: {
-              now: new Date().toString(),
-              today: dayKey(),
-              clockFormat: useSettingsStore.getState().clockFormat,
-            },
-          },
-        }),
-      }),
-  );
 
   const { messages, sendMessage, status, error, clearError, addToolOutput } =
     useChat({
@@ -156,7 +151,11 @@ export default function ChatPanel() {
               </span>
               <select
                 value={modelId}
-                onChange={(e) => setModelId(e.target.value as AiModelId)}
+                onChange={(e) => {
+                  const next = e.target.value as AiModelId;
+                  currentModelId = next;
+                  setModelId(next);
+                }}
                 className="ml-auto rounded-lg bg-surface-2 px-2 py-1.5 text-xs text-neutral-300 outline-none focus:border-accent/60"
                 aria-label="Model"
               >
