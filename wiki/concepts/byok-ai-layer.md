@@ -1,19 +1,22 @@
 # BYOK AI Layer
 
-BYOK means users bring their own model provider key. tooday should not require a
-hosted subscription to use AI.
+BYOK means users bring their own model provider key.
 
 ## Current Status
 
-Not implemented.
+**Superseded on 2026-07-02.** Product direction changed: tooday is planned to
+launch as SaaS, so the AI layer uses a server-side OpenRouter key
+(`OPENROUTER_API_KEY`, gitignored `.env.local`) instead of user-provided keys.
+See the [AI chat panel design](../../docs/superpowers/specs/2026-07-02-ai-chat-panel-design.md).
 
-## Intended Shape
+## Retained Principles
 
-- AI is optional.
-- Provider credentials are owned by the user.
-- Provider adapters should be isolated from the core planner.
-- Generated schedule changes should be drafts until accepted.
-- The UI should show what context was sent to a model.
+- AI is optional; planner basics never depend on model availability.
+- Provider adapters isolated from the core planner (single OpenRouter route).
+- Schedule changes proposed by the model require user confirmation before
+  they are applied.
+- The server stores no plan data; context reaches the model only via
+  client-executed read tools.
 
 ## Candidate First Feature
 

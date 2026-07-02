@@ -5,10 +5,11 @@ tooday is a local-first clock planner.
 ## Settled For Now
 
 - Open source public repo.
-- No default subscription model.
-- Local/self-hosted usage should be the main path.
+- Long-term goal changed on 2026-07-02: launch as SaaS once the app is
+  complete. AI uses a server-side OpenRouter key, not BYOK.
 - The clock-first planner is the core surface.
-- AI belongs behind the core planner as optional BYOK functionality.
+- AI is an optional agentic chat panel behind the core planner
+  (see [[byok-ai-layer]] for the superseded BYOK shape).
 
 ## Current Boundary
 
