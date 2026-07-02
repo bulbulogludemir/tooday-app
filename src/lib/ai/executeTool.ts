@@ -1,3 +1,4 @@
+import { nanoid } from "nanoid";
 import { z } from "zod";
 import { findFreeSlot } from "@/lib/schedule";
 import { dayKey, hhmmToMinutes, minutesToHHmm } from "@/lib/time";
@@ -234,6 +235,16 @@ const handlers: {
     };
   },
 
+  clear_completed_todos: () => {
+    const done = usePlanStore.getState().todos.filter((t) => t.done).length;
+    usePlanStore.getState().clearCompletedTodos();
+    return {
+      ok: true,
+      data: { removed: done },
+      summary: `Cleared ${done} completed todos`,
+    };
+  },
+
   start_pomodoro: () => {
     const settings = useSettingsStore.getState();
     if (!settings.showPomodoro) settings.togglePomodoro();
@@ -244,6 +255,209 @@ const handlers: {
   stop_pomodoro: () => {
     usePomodoroStore.getState().pause();
     return { ok: true, data: {}, summary: "Pomodoro paused" };
+  },
+
+  get_templates: () => {
+    const templates = usePlanStore.getState().templates.map((t) => ({
+      name: t.name,
+      activities: t.activities.map((a) => ({
+        name: a.name,
+        start: minutesToHHmm(a.start),
+        durationMinutes: a.duration,
+      })),
+    }));
+    return {
+      ok: true,
+      data: { templates },
+      summary: `Read ${templates.length} templates`,
+    };
+  },
+
+  get_settings: () => {
+    const s = useSettingsStore.getState();
+    return {
+      ok: true,
+      data: {
+        clockFormat: s.clockFormat,
+        startDay: s.startDay === 1 ? "Monday" : "Sunday",
+        accent: s.accent,
+        notificationsEnabled: s.notificationsEnabled,
+        pomodoroBarVisible: s.showPomodoro,
+      },
+      summary: "Read settings",
+    };
+  },
+
+  add_category: (input) => {
+    const { categories, setCategories } = usePlanStore.getState();
+    if (categories.some((c) => c.name.toLowerCase() === input.name.toLowerCase())) {
+      return { ok: false, error: `Category "${input.name}" already exists.` };
+    }
+    const created = {
+      id: nanoid(6),
+      name: input.name,
+      color: input.color,
+      type: input.type ?? ("offline" as const),
+    };
+    setCategories([...categories, created]);
+    return {
+      ok: true,
+      data: { id: created.id },
+      summary: `Added category "${input.name}" (${input.color})`,
+    };
+  },
+
+  update_category: (input) => {
+    const { categories, setCategories } = usePlanStore.getState();
+    const target = categories.find(
+      (c) => c.name.toLowerCase() === input.categoryName.toLowerCase(),
+    );
+    if (!target) {
+      const resolved = resolveCategoryId(input.categoryName);
+      return { ok: false, error: "error" in resolved ? resolved.error : "Category not found." };
+    }
+    if (
+      input.newName &&
+      categories.some(
+        (c) =>
+          c.id !== target.id &&
+          c.name.toLowerCase() === input.newName!.toLowerCase(),
+      )
+    ) {
+      return { ok: false, error: `Category "${input.newName}" already exists.` };
+    }
+    const next = {
+      ...target,
+      name: input.newName ?? target.name,
+      color: input.color ?? target.color,
+      type: input.type ?? target.type,
+    };
+    setCategories(categories.map((c) => (c.id === target.id ? next : c)));
+    return {
+      ok: true,
+      data: { id: target.id },
+      summary: `Updated category "${target.name}"${input.newName ? ` → "${input.newName}"` : ""}`,
+      undo: () => {
+        const now = usePlanStore.getState().categories;
+        usePlanStore
+          .getState()
+          .setCategories(now.map((c) => (c.id === target.id ? target : c)));
+      },
+    };
+  },
+
+  delete_category: (input) => {
+    const { categories, setCategories } = usePlanStore.getState();
+    const target = categories.find(
+      (c) => c.name.toLowerCase() === input.categoryName.toLowerCase(),
+    );
+    if (!target) {
+      const resolved = resolveCategoryId(input.categoryName);
+      return { ok: false, error: "error" in resolved ? resolved.error : "Category not found." };
+    }
+    setCategories(categories.filter((c) => c.id !== target.id));
+    return {
+      ok: true,
+      data: { id: target.id },
+      summary: `Deleted category "${target.name}"`,
+      undo: () =>
+        usePlanStore
+          .getState()
+          .setCategories([...usePlanStore.getState().categories, target]),
+    };
+  },
+
+  copy_day: (input) => {
+    const copied = usePlanStore.getState().copyDay(input.fromDay, input.toDay);
+    return {
+      ok: true,
+      data: { copied },
+      summary: `Copied ${copied} activities from ${input.fromDay} to ${input.toDay}`,
+    };
+  },
+
+  save_template: (input) => {
+    const dayActivities = usePlanStore.getState().plans[input.day] ?? [];
+    if (dayActivities.length === 0) {
+      return { ok: false, error: `${input.day} has no activities to save.` };
+    }
+    usePlanStore.getState().saveTemplate(input.name, input.day);
+    return {
+      ok: true,
+      data: { activities: dayActivities.length },
+      summary: `Saved "${input.name}" template (${dayActivities.length} activities)`,
+    };
+  },
+
+  apply_template: (input) => {
+    const template = usePlanStore
+      .getState()
+      .templates.find(
+        (t) => t.name.toLowerCase() === input.templateName.toLowerCase(),
+      );
+    if (!template) {
+      const names =
+        usePlanStore.getState().templates.map((t) => t.name).join(", ") ||
+        "(none)";
+      return {
+        ok: false,
+        error: `Unknown template "${input.templateName}". Saved templates: ${names}`,
+      };
+    }
+    const applied = usePlanStore.getState().applyTemplate(template.id, input.day);
+    return {
+      ok: true,
+      data: { applied },
+      summary: `Applied "${template.name}" to ${input.day} (${applied} activities)`,
+    };
+  },
+
+  delete_template: (input) => {
+    const template = usePlanStore
+      .getState()
+      .templates.find(
+        (t) => t.name.toLowerCase() === input.templateName.toLowerCase(),
+      );
+    if (!template) {
+      return { ok: false, error: `Unknown template "${input.templateName}"` };
+    }
+    usePlanStore.getState().deleteTemplate(template.id);
+    return {
+      ok: true,
+      data: { id: template.id },
+      summary: `Deleted template "${template.name}"`,
+    };
+  },
+
+  update_settings: (input) => {
+    const s = useSettingsStore.getState();
+    const changes: string[] = [];
+    if (input.clockFormat !== undefined) {
+      s.setClockFormat(input.clockFormat);
+      changes.push(`clock ${input.clockFormat}`);
+    }
+    if (input.startDay !== undefined) {
+      s.setStartDay(input.startDay);
+      changes.push(`week starts ${input.startDay === 1 ? "Monday" : "Sunday"}`);
+    }
+    if (input.accent !== undefined) {
+      s.setAccent(input.accent);
+      changes.push(`accent ${input.accent}`);
+    }
+    if (input.notificationsEnabled !== undefined) {
+      s.setNotificationsEnabled(input.notificationsEnabled);
+      changes.push(
+        `notifications ${input.notificationsEnabled ? "on" : "off"}`,
+      );
+    }
+    if (changes.length === 0) {
+      return { ok: false, error: "No settings provided to change." };
+    }
+    return {
+      ok: true,
+      data: {},
+      summary: `Settings updated: ${changes.join(", ")}`,
+    };
   },
 };
 
@@ -309,10 +523,40 @@ export function describeToolCall(toolName: string, input: unknown): string {
       return "Mark a todo as done";
     case "delete_todo":
       return "Delete a todo";
+    case "clear_completed_todos":
+      return "Clear all completed todos";
     case "start_pomodoro":
       return "Start the pomodoro timer";
     case "stop_pomodoro":
       return "Pause the pomodoro timer";
+    case "add_category":
+      return `Create category "${String(i.name)}" (${String(i.color)}${
+        i.type ? `, ${String(i.type)}` : ""
+      })`;
+    case "update_category": {
+      const changes = ["newName", "color", "type"]
+        .filter((k) => i[k] !== undefined)
+        .map((k) => `${k === "newName" ? "name" : k} → ${String(i[k])}`)
+        .join(", ");
+      return `Update category "${String(i.categoryName)}": ${changes || "no changes"}`;
+    }
+    case "delete_category":
+      return `Delete category "${String(i.categoryName)}" (its activities become uncategorized)`;
+    case "copy_day":
+      return `Copy all activities from ${String(i.fromDay)} to ${String(i.toDay)}`;
+    case "save_template":
+      return `Save ${String(i.day)} as template "${String(i.name)}"`;
+    case "apply_template":
+      return `Apply template "${String(i.templateName)}" to ${String(i.day)}`;
+    case "delete_template":
+      return `Delete template "${String(i.templateName)}"`;
+    case "update_settings": {
+      const changes = ["clockFormat", "startDay", "accent", "notificationsEnabled"]
+        .filter((k) => i[k] !== undefined)
+        .map((k) => `${k} → ${String(i[k])}`)
+        .join(", ");
+      return `Change settings: ${changes || "nothing"}`;
+    }
     default:
       return toolName;
   }

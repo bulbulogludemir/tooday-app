@@ -232,6 +232,100 @@ describe("pomodoro tools", () => {
   });
 });
 
+describe("category tools", () => {
+  it("add_category creates one; duplicate name errors", () => {
+    const res = executeTool("add_category", { name: "Gym", color: "orange" });
+    expect(res.ok).toBe(true);
+    const cats = usePlanStore.getState().categories;
+    expect(cats).toHaveLength(2);
+    expect(cats[1]).toMatchObject({ name: "Gym", color: "orange", type: "offline" });
+    expect(executeTool("add_category", { name: "gym", color: "blue" }).ok).toBe(false);
+  });
+
+  it("add_category rejects invalid color", () => {
+    expect(executeTool("add_category", { name: "X", color: "magenta" }).ok).toBe(false);
+  });
+
+  it("update_category renames and recolors with working undo", () => {
+    const res = executeTool("update_category", {
+      categoryName: "health",
+      newName: "Fitness",
+      color: "rose",
+    });
+    expect(res.ok).toBe(true);
+    expect(usePlanStore.getState().categories[0]).toMatchObject({
+      id: "cat-1",
+      name: "Fitness",
+      color: "rose",
+    });
+    if (!res.ok) return;
+    res.undo?.();
+    expect(usePlanStore.getState().categories[0]).toMatchObject({
+      name: "Health",
+      color: "emerald",
+    });
+  });
+
+  it("delete_category removes it and activities keep working", () => {
+    const res = executeTool("delete_category", { categoryName: "Health" });
+    expect(res.ok).toBe(true);
+    expect(usePlanStore.getState().categories).toHaveLength(0);
+    const plan = executeTool("get_plan", { day: DAY });
+    if (!plan.ok) throw new Error("get_plan failed");
+    expect(
+      (plan.data as { activities: { category: string | null }[] }).activities[0]
+        .category,
+    ).toBeNull();
+  });
+});
+
+describe("day/template tools", () => {
+  it("copy_day copies activities", () => {
+    const res = executeTool("copy_day", { fromDay: DAY, toDay: "2026-07-04" });
+    expect(res.ok).toBe(true);
+    expect(usePlanStore.getState().plans["2026-07-04"]).toHaveLength(1);
+  });
+
+  it("save_template + apply_template round-trip; empty day errors", () => {
+    expect(
+      executeTool("save_template", { name: "Base", day: "2026-07-05" }).ok,
+    ).toBe(false);
+    expect(executeTool("save_template", { name: "Base", day: DAY }).ok).toBe(true);
+    const applied = executeTool("apply_template", {
+      templateName: "base",
+      day: "2026-07-06",
+    });
+    expect(applied.ok).toBe(true);
+    expect(usePlanStore.getState().plans["2026-07-06"]).toHaveLength(1);
+    expect(executeTool("delete_template", { templateName: "Base" }).ok).toBe(true);
+    expect(usePlanStore.getState().templates).toHaveLength(0);
+  });
+});
+
+describe("settings and todo cleanup", () => {
+  it("update_settings applies provided fields only", () => {
+    const res = executeTool("update_settings", {
+      clockFormat: "12h",
+      accent: "amber",
+    });
+    expect(res.ok).toBe(true);
+    const s = useSettingsStore.getState();
+    expect(s.clockFormat).toBe("12h");
+    expect(s.accent).toBe("amber");
+    expect(executeTool("update_settings", {}).ok).toBe(false);
+  });
+
+  it("clear_completed_todos removes only done todos", () => {
+    executeTool("complete_todo", { todoId: "todo-1" });
+    executeTool("add_todo", { text: "Keep me" });
+    const res = executeTool("clear_completed_todos", {});
+    expect(res.ok).toBe(true);
+    const todos = usePlanStore.getState().todos;
+    expect(todos).toHaveLength(1);
+    expect(todos[0].text).toBe("Keep me");
+  });
+});
+
 describe("plumbing", () => {
   it("unknown tool errors", () => {
     expect(executeTool("nope", {}).ok).toBe(false);

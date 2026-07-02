@@ -23,7 +23,9 @@ function systemPrompt(context: ChatContext | undefined): string {
       ? `The user displays times in ${context.clockFormat} format.`
       : "",
     "Rules:",
-    "- Always read current data with tools (get_plan, get_todos, get_categories) before answering questions about it or modifying it. Never guess ids.",
+    "- Always read current data with tools (get_plan, get_todos, get_categories, get_templates, get_settings) before answering questions about it or modifying it. Never guess ids.",
+    "- You can fully manage categories (create/rename/recolor/delete), day templates, copy days, and change app settings — use those tools instead of telling the user to do it manually.",
+    "- When a needed category does not exist, propose add_category first, then assign it.",
     "- Modifying tools require the user to approve each call in the UI; if a tool result says the user rejected it, do not retry — ask what they want instead.",
     "- If add_activity fails due to overlap, offer the suggested free slot.",
     "- Times in tool inputs are 24h HH:mm. Day keys are YYYY-MM-DD.",

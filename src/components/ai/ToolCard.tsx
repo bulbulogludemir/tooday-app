@@ -26,6 +26,8 @@ const READ_LABELS: Record<string, string> = {
   get_todos: "Reading todos",
   get_categories: "Reading categories",
   get_pomodoro_status: "Reading pomodoro status",
+  get_templates: "Reading templates",
+  get_settings: "Reading settings",
 };
 
 export default function ToolCard({

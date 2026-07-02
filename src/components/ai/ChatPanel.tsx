@@ -26,6 +26,19 @@ const SUGGESTIONS = [
   "Start a focus session",
 ];
 
+/** Minimal inline markdown: only **bold**, since models emit it constantly. */
+function renderInline(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") ? (
+      <strong key={i} className="font-semibold">
+        {part.slice(2, -2)}
+      </strong>
+    ) : (
+      part
+    ),
+  );
+}
+
 // Read at request time by the transport; written from the model picker.
 let currentModelId: AiModelId = DEFAULT_MODEL_ID;
 
@@ -215,7 +228,7 @@ export default function ChatPanel() {
                               : "bg-surface-2 text-foreground"
                           }`}
                         >
-                          {part.text}
+                          {renderInline(part.text)}
                         </div>
                       );
                     }
