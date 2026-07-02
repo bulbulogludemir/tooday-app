@@ -43,13 +43,26 @@ export default function ToolCard({
   const write = isWriteTool(toolName);
   const output = (part.output ?? undefined) as WireResult | undefined;
 
-  // Read tools: a subtle status chip.
+  // Auto-executed tools (reads + area curation): a subtle status chip.
+  // Prefer the executor's summary ("Added table 'Portfolio'") once available.
   if (!write) {
-    const label = READ_LABELS[toolName] ?? toolName;
+    const failed = part.state === "output-available" && output?.ok === false;
+    const label =
+      (part.state === "output-available" && (output?.summary ?? output?.error)) ||
+      READ_LABELS[toolName] ||
+      toolName.replace(/^area_/, "").replaceAll("_", " ");
     return (
-      <div className="flex items-center gap-1.5 self-start rounded-full bg-surface-2 px-2.5 py-1 text-xs text-muted">
+      <div
+        className={`flex items-center gap-1.5 self-start rounded-full bg-surface-2 px-2.5 py-1 text-xs ${
+          failed ? "text-red-400/90" : "text-muted"
+        }`}
+      >
         {part.state === "output-available" ? (
-          <Eye size={12} />
+          failed ? (
+            <TriangleAlert size={12} />
+          ) : (
+            <Eye size={12} />
+          )
         ) : (
           <Loader2 size={12} className="animate-spin" />
         )}

@@ -6,6 +6,7 @@ import {
   Clock3,
   CalendarDays,
   Check,
+  LayoutGrid,
   ListChecks,
   PieChart,
   AlarmClock,
@@ -26,6 +27,7 @@ const VIEWS = [
   { href: "/plan", label: "Plan", icon: CalendarDays, shortcut: "2" },
   { href: "/todos", label: "Todos", icon: ListChecks, shortcut: "3" },
   { href: "/report", label: "Report", icon: PieChart, shortcut: "4" },
+  { href: "/areas", label: "Areas", icon: LayoutGrid, shortcut: "5" },
 ] as const;
 
 export default function Sidebar() {
@@ -44,6 +46,7 @@ export default function Sidebar() {
       else if (e.code === "Digit2") router.push("/plan");
       else if (e.code === "Digit3") router.push("/todos");
       else if (e.code === "Digit4") router.push("/report");
+      else if (e.code === "Digit5") router.push("/areas");
       else if (e.code === "KeyP") togglePomodoro();
       else if (e.code === "KeyC") toggleCutMode();
       else return;
@@ -68,7 +71,10 @@ export default function Sidebar() {
             >
               <div className="glass elev-1 flex flex-col items-center gap-1 rounded-full p-1.5">
                 {VIEWS.map((v) => {
-                  const active = pathname === v.href;
+                  const active =
+                    v.href === "/"
+                      ? pathname === "/"
+                      : pathname.startsWith(v.href);
                   const Icon = v.icon;
                   return (
                     <Tooltip

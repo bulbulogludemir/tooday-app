@@ -27,6 +27,7 @@ import { dayKey, minutesToHHmm, nowMinutes } from "@/lib/time";
 import { usePlanStore } from "@/stores/usePlanStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
 import { useToastStore } from "@/stores/useToastStore";
+import { renderInline } from "./markdown";
 import ToolCard, { type ToolPartLike } from "./ToolCard";
 
 const MODEL_HINTS: Record<AiModelId, string> = {
@@ -57,19 +58,6 @@ function buildSuggestions(): string[] {
   if (current) s.push(`Start a focus session for ${current.name}`);
   s.push("Tidy up my categories");
   return s.slice(0, 3);
-}
-
-/** Minimal inline markdown: only **bold**, since models emit it constantly. */
-function renderInline(text: string) {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-    part.startsWith("**") && part.endsWith("**") ? (
-      <strong key={i} className="font-semibold">
-        {part.slice(2, -2)}
-      </strong>
-    ) : (
-      part
-    ),
-  );
 }
 
 // Read at request time by the transport; written from the model picker.
