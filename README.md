@@ -1,6 +1,9 @@
 # tooday
 
-Local-first day planning wrapped around a clock.
+Local-first day planning wrapped around a clock. Based on
+[Cloock](https://github.com/aykutkardas/cloock) by
+[@aykutkardas](https://github.com/aykutkardas) — see
+[Origins & Credits](#origins--credits).
 
 tooday is a self-hostable personal planner for people who want a fast, private
 surface for planning the day, tracking focus, and reviewing time without a
@@ -86,6 +89,23 @@ npm run start    # serve the production build
 npm run lint     # ESLint
 npm run test     # Vitest unit tests
 ```
+
+## Origins & Credits
+
+tooday started as a derivative of [Cloock](https://github.com/aykutkardas/cloock)
+by [Aykut Kardaş](https://github.com/aykutkardas) ([cloock.co](https://cloock.co)).
+The clock-first day view concept and the original codebase this project grew
+from are his work.
+
+This repo is not a GitHub fork because it predates Cloock's open-source
+release: it began as a private clone of the codebase, shared directly by the
+author before the public repository existed, so there was no upstream to fork
+from. Development has diverged independently since then (plan/todo/report
+views, command palette, Pomodoro, AI features, and more).
+
+This use — including commercial use — is with the original author's
+permission. Cloock is now open source under the MIT license as well. If you
+like the core idea, go star the original.
 
 ## License
 
