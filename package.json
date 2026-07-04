@@ -5,12 +5,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/bulbulogludemir/tooday.git"
+    "url": "git+ssh://git@github.com/bulbulogludemir/tooday-app.git"
   },
   "bugs": {
-    "url": "https://github.com/bulbulogludemir/tooday/issues"
+    "url": "https://github.com/bulbulogludemir/tooday-app/issues"
   },
-  "homepage": "https://github.com/bulbulogludemir/tooday#readme",
+  "homepage": "https://github.com/bulbulogludemir/tooday-app#readme",
   "keywords": [
     "planner",
     "local-first",

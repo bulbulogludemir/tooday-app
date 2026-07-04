@@ -13,8 +13,8 @@ hosted subscription service in the default path.
 ## Server Runbook
 
 ```bash
-git clone git@github.com:bulbulogludemir/tooday.git
-cd tooday
+git clone git@github.com:bulbulogludemir/tooday-app.git
+cd tooday-app
 npm ci
 npm run build
 npm run start -- --port 3210

@@ -29,8 +29,8 @@ AI through BYOK provider keys instead of a hosted paid account.
 ## Local Setup
 
 ```bash
-git clone git@github.com:bulbulogludemir/tooday.git
-cd tooday
+git clone git@github.com:bulbulogludemir/tooday-app.git
+cd tooday-app
 npm ci
 npm run dev
 ```
